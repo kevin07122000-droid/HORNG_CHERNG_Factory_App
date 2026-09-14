@@ -1,0 +1,15 @@
+{
+  "app_display_name": "HORNG CHERNG",
+  "recommended_bundle_id": "com.horngcherng.factory",
+  "minimum_ios": "13.0",
+  "company": "HORNG CHERNG INDUSTRIAL CO., LTD.",
+  "features": [
+    "Production orders",
+    "Materials & inventory",
+    "Inbound/outbound shipping",
+    "Quality control",
+    "Drawing/file selection",
+    "QR/barcode scanning",
+    "Local persistence"
+  ]
+}
