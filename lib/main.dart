@@ -132,14 +132,64 @@ Widget metric(String t,String v,String s,IconData i,Color c)=>Card(child:Padding
   Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(t,style:const TextStyle(color:Colors.black54)),Text('$v $s',style:const TextStyle(fontSize:18,fontWeight:FontWeight.bold))]))
 ])));
 
-class ProductionPage extends StatelessWidget { const ProductionPage({super.key});
-  @override Widget build(BuildContext context)=>AnimatedBuilder(animation:store,builder:(_,__)=>Scaffold(
-    body:ListView(padding:const EdgeInsets.all(16),children:store.parts.map((p)=>Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      Row(children:[Expanded(child:Text('${p.no}  ${p.name}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:17))),Chip(label:Text('${(p.good/p.planned*100).clamp(0,100).toStringAsFixed(0)}%'))]),
-      Text('計畫 ${p.planned}・良品 ${p.good}・不良 ${p.bad}'),const SizedBox(height:8),LinearProgressIndicator(value:(p.good/p.planned).clamp(0,1)),
-    ])))).toList()),
-    floatingActionButton:FloatingActionButton.extended(onPressed:()=>showAddPart(context),icon:const Icon(Icons.add),label:const Text('新增工單')),
-  ));
+class ProductionPage extends StatelessWidget {
+  const ProductionPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: store,
+    builder: (_, __) => Scaffold(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: store.parts.map((p) => Card(
+          child: InkWell(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PartDetailPage(part: p),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${p.no}  ${p.name}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                          ),
+                        ),
+                      ),
+                      Chip(
+                        label: Text(
+                          '${(p.good / p.planned * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text('計畫 ${p.planned}・良品 ${p.good}・不良 ${p.bad}'),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: (p.good / p.planned).clamp(0, 1),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )).toList(),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showAddPart(context),
+        icon: const Icon(Icons.add),
+        label: const Text('新增工單'),
+      ),
+    ),
+  );
 }
 
 Future<void> showAddPart(BuildContext context) async {
