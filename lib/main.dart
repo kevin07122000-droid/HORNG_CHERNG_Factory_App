@@ -175,7 +175,7 @@ class DrawingPage extends StatefulWidget { const DrawingPage({super.key}); @over
 class _DrawingPageState extends State<DrawingPage> {
  String? selected;
  @override Widget build(BuildContext context)=>AnimatedBuilder(animation:store,builder:(_,__)=>ListView(padding:const EdgeInsets.all(16),children:[
-  FilledButton.icon(onPressed:()async{final r=await FilePicker.pickFiles(type:FileType.custom,allowedExtensions:['pdf','dwg','dxf','jpg','png']);if(r!=null)setState(()=>selected=r.files.single.name);},icon:const Icon(Icons.upload_file),label:const Text('選擇圖面檔案')),
+  FilledButton.icon(onPressed:()async{final r=await FilePicker.platform.pickFiles(type:FileType.custom,allowedExtensions:['pdf','dwg','dxf','jpg','png']);if(r!=null)setState(()=>selected=r.files.single.name);},icon:const Icon(Icons.upload_file),label:const Text('選擇圖面檔案')),
   if(selected!=null) Padding(padding:const EdgeInsets.all(12),child:Text('已選擇：$selected')),
   ...store.parts.map((p)=>Card(child:ListTile(leading:const Icon(Icons.picture_as_pdf,color:red),title:Text(p.drawing),subtitle:Text('${p.no}・版本管理'),trailing:const Icon(Icons.chevron_right))))
  ]));
