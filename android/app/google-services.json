@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "584301597163",
+    "project_id": "horng-cherng-factory",
+    "storage_bucket": "horng-cherng-factory.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584301597163:android:d0b547d2dd82d15b6fc9ae",
+        "android_client_info": {
+          "package_name": "com.example.factory_mgmt_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLmqIamG3GWyMU2gcXDvhF6Q4nWZlTB0k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
