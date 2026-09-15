@@ -62,7 +62,7 @@ class LoginPage extends StatelessWidget {
 }
 
 class Part {
-  final String no, name, material, drawing;
+  String no, name, material, drawing;
   int planned, good, bad, shipped, stock;
   Part(this.no,this.name,this.material,this.planned,this.good,this.bad,this.shipped,this.stock,this.drawing);
   Map<String,dynamic> toJson()=>{'no':no,'name':name,'material':material,'planned':planned,'good':good,'bad':bad,'shipped':shipped,'stock':stock,'drawing':drawing};
@@ -214,14 +214,130 @@ class _PartDetailPageState extends State<PartDetailPage> {
  ]));}
 }
 
-Future<void> editCounts(BuildContext context,Part p) async {
- final good=TextEditingController(text:'${p.good}'),bad=TextEditingController(text:'${p.bad}'),ship=TextEditingController(text:'${p.shipped}'),stock=TextEditingController(text:'${p.stock}');
- await showDialog(context:context,builder:(c)=>AlertDialog(title:Text('修改 ${p.no}'),content:Column(mainAxisSize:MainAxisSize.min,children:[
-  TextField(controller:good,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'良品')),
-  TextField(controller:bad,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'不良品')),
-  TextField(controller:ship,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'已出貨')),
-  TextField(controller:stock,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'庫存')),
- ]),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('取消')),FilledButton(onPressed:(){
-  p.good=int.tryParse(good.text)??p.good;p.bad=int.tryParse(bad.text)??p.bad;p.shipped=int.tryParse(ship.text)??p.shipped;p.stock=int.tryParse(stock.text)??p.stock;store.save();Navigator.pop(c);
- },child:const Text('儲存'))]));
+Future<void> editCounts(BuildContext context, Part p) async {
+  final no = TextEditingController(text: p.no);
+  final name = TextEditingController(text: p.name);
+  final material = TextEditingController(text: p.material);
+  final planned = TextEditingController(text: '${p.planned}');
+  final good = TextEditingController(text: '${p.good}');
+  final bad = TextEditingController(text: '${p.bad}');
+  final ship = TextEditingController(text: '${p.shipped}');
+  final stock = TextEditingController(text: '${p.stock}');
+
+  await showDialog(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text('修改 ${p.no}'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: no,
+              decoration: const InputDecoration(labelText: '料號'),
+            ),
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: '品名'),
+            ),
+            TextField(
+              controller: material,
+              decoration: const InputDecoration(labelText: '材料'),
+            ),
+            TextField(
+              controller: planned,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '生產數量'),
+            ),
+            TextField(
+              controller: good,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '良品'),
+            ),
+            TextField(
+              controller: bad,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '不良品'),
+            ),
+            TextField(
+              controller: ship,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '已出貨'),
+            ),
+            TextField(
+              controller: stock,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: '庫存'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () async {
+            final confirm = await showDialog<bool>(
+              context: c,
+              builder: (d) => AlertDialog(
+                title: const Text('確認刪除'),
+                content: Text('確定要刪除 ${p.no} ${p.name} 嗎？'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(d, false),
+                    child: const Text('取消'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(d, true),
+                    child: const Text('確定刪除'),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirm == true) {
+              store.parts.remove(p);
+              await store.save();
+              if (c.mounted) Navigator.pop(c);
+              if (context.mounted) Navigator.pop(context);
+            }
+          },
+          child: const Text(
+            '刪除工單',
+            style: TextStyle(color: Colors.red),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(c),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          onPressed: () async {
+            final newNo = no.text.trim();
+            if (newNo.isEmpty) return;
+
+            final index = store.parts.indexOf(p);
+
+            if (index >= 0) {
+              store.parts[index] = Part(
+                newNo,
+                name.text.trim(),
+                material.text.trim(),
+                int.tryParse(planned.text) ?? p.planned,
+                int.tryParse(good.text) ?? p.good,
+                int.tryParse(bad.text) ?? p.bad,
+                int.tryParse(ship.text) ?? p.shipped,
+                int.tryParse(stock.text) ?? p.stock,
+                p.drawing,
+              );
+
+              await store.save();
+
+              if (c.mounted) Navigator.pop(c);
+              if (context.mounted) Navigator.pop(context);
+            }
+          },
+          child: const Text('儲存修改'),
+        ),
+      ],
+    ),
+  );
 }
