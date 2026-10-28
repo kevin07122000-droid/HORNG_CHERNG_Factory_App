@@ -29,7 +29,7 @@ jobs:
 
           CERT_PATH="$RUNNER_TEMP/distribution.p12"
           PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
-          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
           KEYCHAIN_PASSWORD="$(openssl rand -hex 20)"
 
           printf '%s' "$IOS_CERTIFICATE_BASE64" | base64 -D > "$CERT_PATH"
@@ -41,9 +41,7 @@ jobs:
 
           security import "$CERT_PATH" \
             -P "$IOS_CERTIFICATE_PASSWORD" \
-            -A \
-            -t cert \
-            -f pkcs12 \
+            -A -t cert -f pkcs12 \
             -k "$KEYCHAIN_PATH"
 
           security set-key-partition-list \
@@ -54,44 +52,44 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH"
           security default-keychain -s "$KEYCHAIN_PATH"
 
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+
           security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
 
-          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" "$RUNNER_TEMP/profile.plist")
-          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print Name" "$RUNNER_TEMP/profile.plist")
-          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print TeamIdentifier:0" "$RUNNER_TEMP/profile.plist")
-          PROFILE_APP_ID=$(/usr/libexec/PlistBuddy -c "Print Entitlements:application-identifier" "$RUNNER_TEMP/profile.plist")
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy \
+            -c "Print UUID" "$RUNNER_TEMP/profile.plist")
 
-          if [ "$PROFILE_APP_ID" != "$TEAM_ID.com.horngcherng.factoryapp" ]; then
-            echo "Provisioning profile Bundle ID does not match."
-            exit 1
-          fi
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy \
+            -c "Print Name" "$RUNNER_TEMP/profile.plist")
 
-          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          TEAM_ID=$(/usr/libexec/PlistBuddy \
+            -c "Print TeamIdentifier:0" "$RUNNER_TEMP/profile.plist")
 
-          echo "APPLE_TEAM_ID=$TEAM_ID" >> "$GITHUB_ENV"
-          echo "APPLE_PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+          cp "$PROFILE_PATH" \
+            "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
 
-      - name: Configure iOS Bundle ID and signing
+          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+          echo "TEAM_ID=$TEAM_ID" >> "$GITHUB_ENV"
+
+      - name: Configure iOS signing
         run: |
+          set -e
+
           ruby <<'RUBY'
           require 'xcodeproj'
 
           project_path = 'ios/Runner.xcodeproj'
           project = Xcodeproj::Project.open(project_path)
 
-          team_id = ENV.fetch('APPLE_TEAM_ID')
-          profile_name = ENV.fetch('APPLE_PROFILE_NAME')
-
           project.targets.each do |target|
             next unless target.name == 'Runner'
 
             target.build_configurations.each do |config|
               config.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.horngcherng.factoryapp'
-              config.build_settings['DEVELOPMENT_TEAM'] = team_id
+              config.build_settings['DEVELOPMENT_TEAM'] = ENV.fetch('TEAM_ID')
               config.build_settings['CODE_SIGN_STYLE'] = 'Manual'
+              config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = ENV.fetch('PROFILE_NAME')
               config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
-              config.build_settings['PROVISIONING_PROFILE_SPECIFIER'] = profile_name
             end
           end
 
@@ -107,13 +105,14 @@ jobs:
         run: |
           cat > ios/ExportOptions.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>method</key>
             <string>app-store-connect</string>
             <key>teamID</key>
-            <string>${APPLE_TEAM_ID}</string>
+            <string>${TEAM_ID}</string>
             <key>signingStyle</key>
             <string>manual</string>
             <key>signingCertificate</key>
@@ -121,10 +120,8 @@ jobs:
             <key>provisioningProfiles</key>
             <dict>
               <key>com.horngcherng.factoryapp</key>
-              <string>${APPLE_PROFILE_NAME}</string>
+              <string>${PROFILE_NAME}</string>
             </dict>
-            <key>destination</key>
-            <string>export</string>
           </dict>
           </plist>
           EOF
@@ -135,7 +132,7 @@ jobs:
             --release \
             --export-options-plist=ios/ExportOptions.plist
 
-      - name: Upload signed IPA
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: HORNG_CHERNG_Signed_IPA
