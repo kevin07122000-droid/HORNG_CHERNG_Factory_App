@@ -138,3 +138,19 @@ jobs:
           name: HORNG_CHERNG_Signed_IPA
           path: build/ios/ipa/*.ipa
           if-no-files-found: error
+- name: Upload IPA to App Store Connect
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          mkdir -p "HOME/.appstoreconnect/private_keys"
+
+          printf '%s' "$APP_STORE_CONNECT_API_KEY" \
+            > "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$(find build/ios/ipa -maxdepth 1 -name '*.ipa' -print -quit)" \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
